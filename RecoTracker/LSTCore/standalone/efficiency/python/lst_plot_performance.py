@@ -9,7 +9,7 @@ from math import sqrt
 
 sel_choices = ["base", "loweta", "xtr", "vtr", "none"]
 metric_choices = ["eff", "fakerate", "duplrate", "fakeorduplrate", "avgOTlen"]
-variable_choices = ["pt", "ptmtv", "ptlow", "eta", "phi", "dxy", "dz", "vxy", "deltaEta", "deltaPhi", "deltaR", "jet_eta", "jet_phi", "jet_pt"]
+variable_choices = ["pt", "ptmtv", "ptlow", "eta", "etalow", "phi", "dxy", "dz", "vxy", "deltaEta", "deltaPhi", "deltaR", "jet_eta", "jet_phi", "jet_pt"]
 objecttype_choices = ["TC", "pT5", "T5", "pT3", "pLS", "T4", "pT2", "pT5_lower", "pT3_lower", "T5_lower", "pLS_lower", "pT2_lower"]
 
 r.gROOT.SetBatch(True)
@@ -32,7 +32,6 @@ parser.add_argument('--yzoom'       , '-y' , dest='yzoom'       , action="store_
 parser.add_argument('--xcoarse'     , '-x' , dest='xcoarse'     , action="store_true" , help='coarse in x')
 parser.add_argument('--sample_name' , '-S' , dest='sample_name' , type=str            , help='sample name in case one wants to override')
 parser.add_argument('--pt_cut'      ,        dest='pt_cut'      , type=float          , default=0.9, help='transverse momentum cut [DEFAULT=0.9]')
-parser.add_argument('--pt_max'      ,        dest='pt_max'      , type=float          , default=None, help='maximum transverse momentum, only used for the label (match createPerfNumDenHists -P)')
 parser.add_argument('--eta_cut'     ,        dest='eta_cut'     , type=float          , default=4.5, help='pseudorapidity cut [DEFAULT=4.5]')
 parser.add_argument('--compare'     , '-C' , dest='compare'     , action="store_true" , help='plot comparisons of input files')
 parser.add_argument('--comp_labels' , '-L' , dest='comp_labels' , type=str            , help='comma separated legend labels for comparison plots (e.g. reference,pT5_update')
@@ -197,7 +196,9 @@ def process_arguments_into_params(args):
     params["git_hash"] = git_hash
 
     params["pt_cut"] = args.pt_cut
-    params["pt_max"] = args.pt_max
+    # pT window of the etalow plots, written by createPerfNumDenHists
+    params["etalow_ptmin"] = f.Get("etalow_ptmin").GetTitle() if f.Get("etalow_ptmin") else "0.6"
+    params["etalow_ptmax"] = f.Get("etalow_ptmax").GetTitle() if f.Get("etalow_ptmax") else "0.8"
     params["eta_cut"] = args.eta_cut
 
     # sample name
@@ -485,8 +486,8 @@ def draw_label(params):
     chargestr = get_chargestr(params["charge"])
     output_name = params["output_name"]
     n_events_processed = params["nevts"]
-    if params["pt_max"] is not None:
-        ptcut = "{} < p_{{T}} < {} GeV".format(params["pt_cut"], params["pt_max"])
+    if "_etalow" in output_name:
+        ptcut = "{} #leq p_{{T}} #leq {} GeV".format(params["etalow_ptmin"], params["etalow_ptmax"])
     else:
         ptcut = "p_{{T}} > {} GeV".format(params["pt_cut"])
     etacut = params["eta_cut"]
@@ -692,13 +693,13 @@ def plot_standard_performance_plots(args):
     yzooms = [False, True]
 
     variables = {
-            "eff": ["pt", "ptlow", "ptmtv", "eta", "phi", "dxy", "dz", "vxy"],
-            "fakerate": ["pt", "ptlow", "ptmtv", "eta", "phi"],
-            "duplrate": ["pt", "ptlow", "ptmtv", "eta", "phi"],
-            "fakeorduplrate": ["pt", "ptlow", "ptmtv", "eta", "phi"],
+            "eff": ["pt", "ptlow", "ptmtv", "eta", "etalow", "phi", "dxy", "dz", "vxy"],
+            "fakerate": ["pt", "ptlow", "ptmtv", "eta", "etalow", "phi"],
+            "duplrate": ["pt", "ptlow", "ptmtv", "eta", "etalow", "phi"],
+            "fakeorduplrate": ["pt", "ptlow", "ptmtv", "eta", "etalow", "phi"],
             "avgOTlen": ["eta"],
             }
-    if (args.jet_branches): variables["eff"] = ["pt", "ptlow", "ptmtv", "eta", "phi", "dxy", "dz", "vxy", "deltaEta", "deltaPhi", "deltaR", "jet_eta", "jet_phi", "jet_pt"]
+    if (args.jet_branches): variables["eff"] = ["pt", "ptlow", "ptmtv", "eta", "etalow", "phi", "dxy", "dz", "vxy", "deltaEta", "deltaPhi", "deltaR", "jet_eta", "jet_phi", "jet_pt"]
     sels = {
             "eff": ["base", "loweta"],
             "fakerate": ["none"],
@@ -711,6 +712,7 @@ def plot_standard_performance_plots(args):
             "ptlow": [False],
             "ptmtv": [False],
             "eta": [False, True],
+            "etalow": [False, True],
             "phi": [False, True],
             "dxy": [False, True],
             "vxy": [False, True],

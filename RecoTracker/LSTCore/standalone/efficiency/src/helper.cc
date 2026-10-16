@@ -29,7 +29,8 @@ void parseArguments(int argc, char** argv) {
       cxxopts::value<int>())(
       "g,pdgid", "additional pdgid filtering to use (must be comma separated)", cxxopts::value<std::string>())(
       "p,pt_cut", "Transverse momentum cut", cxxopts::value<float>()->default_value("0.9"))(
-      "P,pt_max", "Maximum transverse momentum (inclusive)", cxxopts::value<float>()->default_value("1e9"))(
+      "etalow_ptmin", "Lower pT edge (inclusive) for the etalow plots", cxxopts::value<float>()->default_value("0.6"))(
+      "etalow_ptmax", "Upper pT edge (inclusive) for the etalow plots", cxxopts::value<float>()->default_value("0.8"))(
       "e,eta_cut", "Pseudorapidity cut", cxxopts::value<float>()->default_value("4.5"))(
       "d,debug", "Run debug job. i.e. overrides output option to 'debug.root' and 'recreate's the file.")(
       "J,jet_branches", "Accounts for specific jet branches in input root file for testing")("h,help", "Print help");
@@ -73,8 +74,9 @@ void parseArguments(int argc, char** argv) {
   ana.pt_cut = result["pt_cut"].as<float>();
 
   //_______________________________________________________________________________
-  // --pt_max
-  ana.pt_max = result["pt_max"].as<float>();
+  // --etalow_ptmin, --etalow_ptmax
+  ana.etalow_ptmin = result["etalow_ptmin"].as<float>();
+  ana.etalow_ptmax = result["etalow_ptmax"].as<float>();
 
   //_______________________________________________________________________________
   // --eta_cut
@@ -167,7 +169,8 @@ void parseArguments(int argc, char** argv) {
   std::cout << " ana.output_tfile: " << ana.output_tfile->GetName() << std::endl;
   std::cout << " ana.n_events: " << ana.n_events << std::endl;
   std::cout << " ana.pt_cut: " << ana.pt_cut << std::endl;
-  std::cout << " ana.pt_max: " << ana.pt_max << std::endl;
+  std::cout << " ana.etalow_ptmin: " << ana.etalow_ptmin << std::endl;
+  std::cout << " ana.etalow_ptmax: " << ana.etalow_ptmax << std::endl;
   std::cout << " ana.eta_cut: " << ana.eta_cut << std::endl;
   std::cout << " ana.nsplit_jobs: " << ana.nsplit_jobs << std::endl;
   std::cout << " ana.job_index: " << ana.job_index << std::endl;
@@ -242,6 +245,12 @@ void initializeInputsAndOutputs() {
   std::cout << " input: " << input << std::endl;
   TNamed input_tnamed("input", input.Data());
   input_tnamed.Write();
+
+  // Write the pT window of the etalow plots so the plotter can label them
+  TNamed etalow_ptmin_tnamed("etalow_ptmin", TString::Format("%g", ana.etalow_ptmin).Data());
+  etalow_ptmin_tnamed.Write();
+  TNamed etalow_ptmax_tnamed("etalow_ptmax", TString::Format("%g", ana.etalow_ptmax).Data());
+  etalow_ptmax_tnamed.Write();
 
   ana.do_lower_level = false;  // default is false
   TObjArray* brobjArray = ana.events_tchain->GetListOfBranches();

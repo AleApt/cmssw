@@ -22,8 +22,9 @@ public:
   // Minimum pt cut
   float pt_cut;
 
-  // Maximum pt cut
-  float pt_max;
+  // pT window for the etalow plots
+  float etalow_ptmin;
+  float etalow_ptmax;
 
   // Max eta cut
   float eta_cut;
